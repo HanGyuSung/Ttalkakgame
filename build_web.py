@@ -49,8 +49,8 @@ def main():
             print("❌ pygbag 설치 실패")
             return
     
-    # 2. 웹 빌드 생성
-    if not run_command("pygbag --build .", "게임 웹 빌드 생성"):
+    # 2. 웹 빌드 생성 - 최소한의 테스트 파일 사용
+    if not run_command("pygbag --build minimal_test.py", "게임 웹 빌드 생성"):
         print("❌ 웹 빌드 생성 실패")
         return
     
