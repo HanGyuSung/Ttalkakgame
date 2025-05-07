@@ -30,18 +30,17 @@ box_x, box_y = 50, 50
 box_speed = 2
 font = None
 
-# 메인 루프
-def main():
+# 실제 게임 루프 함수
+def game_loop():
     global box_x, box_y, font
     
-    # 폰트 초기화
-    try:
-        font = pygame.font.SysFont(None, 24)
-    except Exception as e:
-        print(f"폰트 초기화 실패: {e}")
-
-    # 사운드는 나중에 초기화 (사용자 상호작용 이후)
+    # 사운드 초기화 시도
     sound_initialized = False
+    try:
+        pygame.mixer.init()
+        sound_initialized = True
+    except Exception as e:
+        print(f"오디오 초기화 실패: {e}")
     
     # 메인 게임 루프
     running = True
@@ -52,14 +51,6 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            
-            # 클릭하면 오디오 초기화 시도 (사용자 상호작용 후)
-            if event.type == pygame.MOUSEBUTTONDOWN and not sound_initialized:
-                try:
-                    pygame.mixer.init()
-                    sound_initialized = True
-                except Exception as e:
-                    print(f"오디오 초기화 실패: {e}")
         
         # 화면 그리기
         screen.fill(BLACK)
@@ -81,17 +72,60 @@ def main():
             screen.blit(fps_text, (10, 10))
             
             # 오디오 상태 표시
-            audio_status = "Audio: Initialized" if sound_initialized else "Audio: Click to initialize"
+            audio_status = "Audio: Initialized" if sound_initialized else "Audio: Failed to initialize"
             audio_text = font.render(audio_status, True, WHITE)
             screen.blit(audio_text, (10, 40))
-            
-            # 안내 텍스트
-            help_text = font.render("Click anywhere to initialize audio", True, WHITE)
-            screen.blit(help_text, (WIDTH//2 - 130, HEIGHT - 30))
         
         # 화면 업데이트
         pygame.display.flip()
         clock.tick(FPS)
+
+# 메인 루프
+def main():
+    global font
+    
+    # 폰트 초기화
+    try:
+        font = pygame.font.SysFont(None, 24)
+        large_font = pygame.font.SysFont(None, 48)
+    except Exception as e:
+        print(f"폰트 초기화 실패: {e}")
+        large_font = None
+    
+    # 시작 화면 표시 (클릭 대기)
+    waiting_for_click = True
+    
+    while waiting_for_click:
+        # 이벤트 처리
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                return
+            
+            # 클릭하면 게임 시작
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                waiting_for_click = False
+                
+        # 시작 화면 그리기
+        screen.fill(BLACK)
+        
+        # 시작 메시지 표시
+        if large_font:
+            title_text = large_font.render("PyGame Web Demo", True, WHITE)
+            screen.blit(title_text, (WIDTH//2 - title_text.get_width()//2, HEIGHT//3))
+            
+            start_text = large_font.render("Click to Start", True, GREEN)
+            screen.blit(start_text, (WIDTH//2 - start_text.get_width()//2, HEIGHT//2))
+        
+        if font:
+            info_text = font.render("Browser security requires user interaction before audio", True, WHITE)
+            screen.blit(info_text, (WIDTH//2 - info_text.get_width()//2, HEIGHT*3//4))
+        
+        pygame.display.flip()
+        clock.tick(FPS)
+    
+    # 게임 루프 시작
+    game_loop()
 
 # 스크립트 실행
 try:
