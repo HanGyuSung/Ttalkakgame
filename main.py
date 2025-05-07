@@ -13,6 +13,12 @@ from sound import SoundManager
 # 게임 초기화
 pygame.init()
 
+# 오디오 초기화 - 웹 배포 오류 방지를 위해 try-except로 감싸기
+try:
+    pygame.mixer.init()
+except Exception as e:
+    print(f"오디오 초기화 실패: {e}")
+
 # 색상 정의
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -25,7 +31,7 @@ YELLOW = (255, 255, 0)
 WIDTH, HEIGHT = 800, 600
 FPS = 60
 
-# 화면 설정
+# 화면 설정 - 웹 배포를 위해 옵션 제거
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("픽셀 어드벤처 2.0")
 clock = pygame.time.Clock()
@@ -84,29 +90,36 @@ class Game:
         self.max_level = 3  # 총 스테이지 수
         
         # 사운드 매니저 초기화
-        self.sound_manager = SoundManager()
-        
-        # 배경 음악 재생
         try:
-            # 우주 분위기 MP3 파일 사용
-            self.sound_manager.play_music("space-ambient-cinematic-music-335721.mp3")
-        except Exception as e:
-            print(f"MP3 배경 음악 재생 중 오류: {e}")
+            self.sound_manager = SoundManager()
+            
+            # 배경 음악 재생
             try:
-                # MP3 파일이 없으면 다운로드
-                from prepare_mp3 import prepare_mp3_file
-                prepare_mp3_file()
+                # 우주 분위기 MP3 파일 사용
                 self.sound_manager.play_music("space-ambient-cinematic-music-335721.mp3")
-            except Exception as e2:
-                print(f"배경 음악 재생 실패")
+            except Exception as e:
+                print(f"MP3 배경 음악 재생 중 오류: {e}")
                 try:
-                    # 기본 배경음악 사용
-                    self.sound_manager.play_music("background.wav")
-                except:
-                    # 모든 것이 실패하면 새로 생성
-                    from create_background import create_background_music
-                    create_background_music()
-                    self.sound_manager.play_music("background.wav")
+                    # MP3 파일이 없으면 다운로드
+                    from prepare_mp3 import prepare_mp3_file
+                    prepare_mp3_file()
+                    self.sound_manager.play_music("space-ambient-cinematic-music-335721.mp3")
+                except Exception as e2:
+                    print(f"배경 음악 재생 실패")
+                    try:
+                        # 기본 배경음악 사용
+                        self.sound_manager.play_music("background.wav")
+                    except:
+                        # 모든 것이 실패하면 새로 생성
+                        try:
+                            from create_background import create_background_music
+                            create_background_music()
+                            self.sound_manager.play_music("background.wav")
+                        except Exception as e3:
+                            print(f"모든 음악 재생 시도 실패: {e3}")
+        except Exception as e:
+            print(f"사운드 시스템 초기화 실패: {e}")
+            self.sound_manager = None
         
         # 배경 생성
         self.background = Background(WIDTH, HEIGHT)
@@ -339,16 +352,25 @@ class Game:
                     self.running = False
                 elif event.key == pygame.K_SPACE:
                     self.player.jump()
-                    if hasattr(self, 'sound_manager'):
-                        self.sound_manager.play("jump")
+                    if hasattr(self, 'sound_manager') and self.sound_manager is not None:
+                        try:
+                            self.sound_manager.play("jump")
+                        except:
+                            pass
                 elif event.key == pygame.K_r and (self.game_over or self.victory):
                     self.__init__()  # 게임 재시작 (모든 변수 초기화)
                 elif event.key == pygame.K_m:  # 음악 켜기/끄기
-                    if hasattr(self, 'sound_manager'):
-                        self.sound_manager.toggle_music()
+                    if hasattr(self, 'sound_manager') and self.sound_manager is not None:
+                        try:
+                            self.sound_manager.toggle_music()
+                        except:
+                            pass
                 elif event.key == pygame.K_s:  # 효과음 켜기/끄기
-                    if hasattr(self, 'sound_manager'):
-                        self.sound_manager.toggle_sound()
+                    if hasattr(self, 'sound_manager') and self.sound_manager is not None:
+                        try:
+                            self.sound_manager.toggle_sound()
+                        except:
+                            pass
 
     def update(self):
         # FPS 계산
@@ -451,8 +473,11 @@ class Game:
                     self.score += 10
                     
                     # 코인 사운드 재생
-                    if hasattr(self, 'sound_manager'):
-                        self.sound_manager.play("coin")
+                    if hasattr(self, 'sound_manager') and self.sound_manager is not None:
+                        try:
+                            self.sound_manager.play("coin")
+                        except:
+                            pass
                     
                     # 효과: 점수 팝업 (최대 3개로 제한)
                     if len(self.popup_texts) < 3:
@@ -465,8 +490,11 @@ class Game:
             for powerup in self.powerups[:]:
                 if powerup.active and self.player.rect.colliderect(powerup.rect):
                     # 파워업 사운드 재생
-                    if hasattr(self, 'sound_manager'):
-                        self.sound_manager.play("powerup")
+                    if hasattr(self, 'sound_manager') and self.sound_manager is not None:
+                        try:
+                            self.sound_manager.play("powerup")
+                        except:
+                            pass
                     
                     # 파워업 종류별 효과 적용
                     if powerup.type == "speed":
@@ -502,8 +530,11 @@ class Game:
                 self.level += 1
                 self.level_complete = True
                 # 레벨 클리어 사운드 재생
-                if hasattr(self, 'sound_manager'):
-                    self.sound_manager.play("victory")
+                if hasattr(self, 'sound_manager') and self.sound_manager is not None:
+                    try:
+                        self.sound_manager.play("victory")
+                    except:
+                        pass
                 # 레벨 전환 준비
                 self.setup_level(self.level)
                 # 보너스 점수 추가
@@ -520,8 +551,11 @@ class Game:
                 # 모든 레벨 클리어 - 게임 승리
                 self.victory = True
                 # 승리 사운드 재생
-                if hasattr(self, 'sound_manager'):
-                    self.sound_manager.play("victory")
+                if hasattr(self, 'sound_manager') and self.sound_manager is not None:
+                    try:
+                        self.sound_manager.play("victory")
+                    except:
+                        pass
         
         # 적과의 충돌 (최적화)
         for enemy in self.enemies[:]:
@@ -543,15 +577,21 @@ class Game:
                             PopupText(enemy.x, enemy.y - 20, "Shield Broken!", WHITE, 30)
                         )
                     # 쉴드 사운드 재생
-                    if hasattr(self, 'sound_manager'):
-                        self.sound_manager.play("powerup")
+                    if hasattr(self, 'sound_manager') and self.sound_manager is not None:
+                        try:
+                            self.sound_manager.play("powerup")
+                        except:
+                            pass
                 else:
                     # 생명 감소
                     self.lives -= 1
                     
                     # 피격 사운드 재생
-                    if hasattr(self, 'sound_manager'):
-                        self.sound_manager.play("hurt")
+                    if hasattr(self, 'sound_manager') and self.sound_manager is not None:
+                        try:
+                            self.sound_manager.play("hurt")
+                        except:
+                            pass
                     
                     # 화면 효과
                     self.screen_shake = 5  # 셰이크 감소
@@ -569,21 +609,30 @@ class Game:
                     if self.lives <= 0:
                         self.game_over = True
                         # 게임 오버 사운드 재생
-                        if hasattr(self, 'sound_manager'):
-                            self.sound_manager.play("game_over")
+                        if hasattr(self, 'sound_manager') and self.sound_manager is not None:
+                            try:
+                                self.sound_manager.play("game_over")
+                            except:
+                                pass
         
         # 화면 밖으로 떨어진 경우
         if self.player.rect.top > HEIGHT:
             self.lives -= 1
             # 피격 사운드 재생
-            if hasattr(self, 'sound_manager') and self.lives > 0:
-                self.sound_manager.play("hurt")
+            if hasattr(self, 'sound_manager') and self.sound_manager is not None and self.lives > 0:
+                try:
+                    self.sound_manager.play("hurt")
+                except:
+                    pass
                 
             if self.lives <= 0:
                 self.game_over = True
                 # 게임 오버 사운드 재생
-                if hasattr(self, 'sound_manager'):
-                    self.sound_manager.play("game_over")
+                if hasattr(self, 'sound_manager') and self.sound_manager is not None:
+                    try:
+                        self.sound_manager.play("game_over")
+                    except:
+                        pass
             else:
                 # 플레이어 위치 리셋
                 self.player.x = 100
@@ -694,7 +743,7 @@ class Game:
             screen.blit(text_surf, (WIDTH - 150, powerup_y + i * 25))
         
         # 사운드 상태 표시
-        if hasattr(self, 'sound_manager'):
+        if hasattr(self, 'sound_manager') and self.sound_manager is not None:
             sound_status = "Sound: ON" if self.sound_manager.sound_enabled else "Sound: OFF"
             music_status = "Music: ON" if self.sound_manager.music_enabled else "Music: OFF"
             
@@ -749,13 +798,15 @@ class Game:
             clock.tick(FPS)
         
         # 게임 종료 시 사운드 정리
-        if hasattr(self, 'sound_manager'):
-            self.sound_manager.stop_music()
-            self.sound_manager.stop()
+        if hasattr(self, 'sound_manager') and self.sound_manager is not None:
+            try:
+                self.sound_manager.stop_music()
+                self.sound_manager.stop()
+            except:
+                pass
 
-# 게임 실행
-if __name__ == "__main__":
-    game = Game()
-    game.run()
-    pygame.quit()
-    sys.exit() 
+# 웹 배포를 위해 바로 실행
+game = Game()
+game.run()
+pygame.quit()
+sys.exit() 
